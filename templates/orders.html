@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orders – Spice Garden</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    .orders-layout {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 40px;
+      padding: 48px 0 80px;
+      align-items: start;
+    }
+
+    /* ---- ORDER TYPE TABS ---- */
+    .order-type-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    .order-type-tab {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .order-type-tab:hover { border-color: rgba(212,168,67,0.4); }
+    .order-type-tab.selected {
+      border-color: var(--gold);
+      background: rgba(212,168,67,0.08);
+    }
+    .order-type-tab .tab-icon { font-size: 28px; margin-bottom: 8px; }
+    .order-type-tab .tab-label { font-size: 13px; font-weight: 600; color: var(--text); }
+    .order-type-tab .tab-desc { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+    /* ---- CART REVIEW ---- */
+    .cart-review {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .cart-review-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(135deg, var(--dark-2), var(--surface));
+    }
+    .cart-review-header h3 { font-family: var(--font-display); font-size: 20px; }
+    .cart-review-header a {
+      color: var(--gold);
+      font-size: 13px;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .cart-review-header a:hover { text-decoration: underline; }
+
+    .cart-review-body { padding: 0 24px; }
+
+    .order-item-row {
+      display: flex;
+      align-items: center;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+    }
+    .order-item-row:last-child { border-bottom: none; }
+    .order-item-emoji { font-size: 28px; width: 44px; height: 44px; background: var(--dark-3); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .order-item-info { flex: 1; }
+    .order-item-name { font-weight: 600; font-size: 14px; }
+    .order-item-qty { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .order-item-price { font-weight: 700; color: var(--gold); font-size: 16px; }
+
+    .remove-item {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 18px;
+      padding: 4px 8px;
+      transition: color 0.2s;
+    }
+    .remove-item:hover { color: #e74c3c; }
+
+    /* ---- ORDER DETAILS FORM ---- */
+    .order-form {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .order-form-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, var(--dark-2), var(--surface));
+    }
+    .order-form-header h3 { font-family: var(--font-display); font-size: 20px; }
+    .order-form-header p { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+    .order-form-body { padding: 24px; }
+
+    /* ---- ORDER SUMMARY SIDEBAR ---- */
+    .order-sidebar { display: flex; flex-direction: column; gap: 20px; }
+
+    .summary-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .summary-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, var(--dark-2), var(--surface));
+    }
+    .summary-header h3 { font-family: var(--font-display); font-size: 20px; }
+    .summary-body { padding: 20px 24px; }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      font-size: 14px;
+    }
+    .summary-row .label { color: var(--text-muted); }
+    .summary-row .value { font-weight: 600; }
+    .summary-row.total {
+      border-top: 1px solid var(--border);
+      margin-top: 8px;
+      padding-top: 16px;
+    }
+    .summary-row.total .label { font-size: 15px; font-weight: 700; color: var(--text); }
+    .summary-row.total .value { font-size: 26px; font-weight: 700; color: var(--gold); font-family: var(--font-display); }
+
+    /* ---- ACTIVE ORDERS LIST ---- */
+    .active-orders {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .active-orders-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, var(--dark-2), var(--surface));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .active-orders-header h3 { font-family: var(--font-display); font-size: 20px; }
+    .active-orders-body { padding: 0 24px; max-height: 400px; overflow-y: auto; }
+
+    .active-order-item {
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .active-order-item:last-child { border-bottom: none; }
+    .order-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .order-name { font-weight: 600; font-size: 14px; }
+    .order-meta { display: flex; gap: 12px; font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+    /* ---- EMPTY CART ---- */
+    .empty-cart-state {
+      text-align: center;
+      padding: 60px 24px;
+    }
+    .empty-cart-state .empty-icon { font-size: 56px; margin-bottom: 16px; opacity: 0.4; }
+    .empty-cart-state h3 { font-family: var(--font-display); font-size: 22px; margin-bottom: 8px; }
+    .empty-cart-state p { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; }
+
+    @media (max-width: 900px) {
+      .orders-layout { grid-template-columns: 1fr; }
+      .order-type-tabs { grid-template-columns: 1fr 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="/" class="nav-logo">
+    <span class="logo-icon">🍛</span>
+    <div>
+      <span class="logo-text">Spice Garden</span>
+      <span class="logo-sub">Fine Dining</span>
+    </div>
+  </a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li><a href="/menu">Menu</a></li>
+    <li><a href="/reservations">Reservations</a></li>
+    <li><a href="/orders" class="active">Order Now</a></li>
+    <li><a href="/dashboard">Dashboard</a></li>
+  </ul>
+  <button class="nav-toggle"><span></span><span></span><span></span></button>
+</nav>
+
+<div class="page-wrapper">
+  <div class="page-hero">
+    <div class="container">
+      <h1>Place Your <span>Order</span></h1>
+      <p>Review your cart and confirm your order details below</p>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="orders-layout" id="main-layout">
+
+      <!-- LEFT: CART & FORM -->
+      <div id="left-col">
+
+        <!-- Empty State (shown when cart is empty) -->
+        <div id="empty-cart" style="display:none;">
+          <div class="empty-cart-state">
+            <div class="empty-icon">🛒</div>
+            <h3>Your cart is empty</h3>
+            <p>Head over to our menu and add some delicious dishes!</p>
+            <a href="/menu" class="btn btn-gold btn-lg">🍽️ Browse Menu</a>
+          </div>
+        </div>
+
+        <!-- Cart has items -->
+        <div id="cart-section">
+          <!-- Order Type Selection -->
+          <div style="margin-bottom:24px;">
+            <h3 style="font-family:var(--font-display);font-size:18px;margin-bottom:16px;">How would you like your order?</h3>
+            <div class="order-type-tabs">
+              <div class="order-type-tab selected" data-type="dine-in" onclick="selectOrderType(this)">
+                <div class="tab-icon">🍽️</div>
+                <div class="tab-label">Dine In</div>
+                <div class="tab-desc">Eat at the restaurant</div>
+              </div>
+              <div class="order-type-tab" data-type="takeaway" onclick="selectOrderType(this)">
+                <div class="tab-icon">🛍️</div>
+                <div class="tab-label">Takeaway</div>
+                <div class="tab-desc">Pick up yourself</div>
+              </div>
+              <div class="order-type-tab" data-type="delivery" onclick="selectOrderType(this)">
+                <div class="tab-icon">🛵</div>
+                <div class="tab-label">Delivery</div>
+                <div class="tab-desc">Delivered to you</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cart Review -->
+          <div class="cart-review">
+            <div class="cart-review-header">
+              <h3>🛒 Cart Items</h3>
+              <a href="/menu">+ Add More</a>
+            </div>
+            <div class="cart-review-body" id="cart-review-body"></div>
+          </div>
+
+          <!-- Order Details Form -->
+          <div class="order-form">
+            <div class="order-form-header">
+              <h3>📝 Order Details</h3>
+              <p>Tell us a bit more about your order</p>
+            </div>
+            <div class="order-form-body">
+              <div class="form-group">
+                <label class="form-label">Your Name *</label>
+                <input type="text" id="order-name" class="form-control" placeholder="e.g. Rahul Mehta">
+              </div>
+
+              <div id="table-field" class="form-group">
+                <label class="form-label">Table Number</label>
+                <input type="number" id="order-table" class="form-control" placeholder="e.g. 5" min="1" max="50">
+              </div>
+
+              <div id="delivery-address" class="form-group" style="display:none;">
+                <label class="form-label">Delivery Address *</label>
+                <textarea id="order-address" class="form-control" placeholder="Full address for delivery..."></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Special Instructions</label>
+                <textarea id="order-instructions" class="form-control" placeholder="Spice level, allergies, extra requests..."></textarea>
+              </div>
+
+              <button class="btn btn-gold btn-block btn-lg" id="place-order-btn" onclick="placeOrder()">
+                🍽️ Place Order
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: SUMMARY + ACTIVE ORDERS -->
+      <div class="order-sidebar">
+
+        <!-- Price Summary -->
+        <div class="summary-card" id="summary-card">
+          <div class="summary-header">
+            <h3>💰 Order Summary</h3>
+          </div>
+          <div class="summary-body" id="summary-body">
+            <div class="summary-row">
+              <span class="label">Subtotal</span>
+              <span class="value" id="s-subtotal">₹0</span>
+            </div>
+            <div class="summary-row">
+              <span class="label">GST (5%)</span>
+              <span class="value" id="s-tax">₹0</span>
+            </div>
+            <div class="summary-row" id="s-delivery-row" style="display:none;">
+              <span class="label">Delivery Charge</span>
+              <span class="value" id="s-delivery">₹40</span>
+            </div>
+            <div class="summary-row total">
+              <span class="label">Total Payable</span>
+              <span class="value" id="s-total">₹0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Orders -->
+        <div class="active-orders">
+          <div class="active-orders-header">
+            <h3>📋 Live Orders</h3>
+            <button class="btn btn-ghost btn-sm" onclick="loadOrders()">↻</button>
+          </div>
+          <div class="active-orders-body" id="orders-list">
+            <div class="spinner"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="logo-text">🍛 Spice Garden</div>
+      <p>A celebration of authentic Indian flavors.<br>Open daily from 12 PM to 11 PM.</p>
+    </div>
+    <div class="footer-links">
+      <h4>Quick Links</h4>
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/menu">Menu</a></li>
+        <li><a href="/reservations">Reservations</a></li>
+        <li><a href="/orders">Orders</a></li>
+      </ul>
+    </div>
+    <div class="footer-links">
+      <h4>Contact</h4>
+      <ul>
+        <li><a href="#">📍 Bandra West, Mumbai</a></li>
+        <li><a href="#">📞 +91 98765 43210</a></li>
+        <li><a href="#">✉️ hello@spicegarden.in</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">© 2024 Spice Garden. All rights reserved.</div>
+</footer>
+
+<div id="toast-container"></div>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+let selectedOrderType = 'dine-in';
+
+// ---- Order Type ----
+function selectOrderType(el) {
+  document.querySelectorAll('.order-type-tab').forEach(t => t.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedOrderType = el.dataset.type;
+
+  const tableField = document.getElementById('table-field');
+  const deliveryAddr = document.getElementById('delivery-address');
+  const deliveryRow = document.getElementById('s-delivery-row');
+
+  tableField.style.display = selectedOrderType === 'dine-in' ? 'block' : 'none';
+  deliveryAddr.style.display = selectedOrderType === 'delivery' ? 'block' : 'none';
+  deliveryRow.style.display = selectedOrderType === 'delivery' ? 'flex' : 'none';
+
+  updateSummary();
+}
+
+// ---- Render Cart Review ----
+function renderCartReview() {
+  if (cart.length === 0) {
+    document.getElementById('cart-section').style.display = 'none';
+    document.getElementById('empty-cart').style.display = 'block';
+    document.getElementById('summary-card').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('cart-section').style.display = 'block';
+  document.getElementById('empty-cart').style.display = 'none';
+  document.getElementById('summary-card').style.display = 'block';
+
+  const foodEmojis = ['🍛', '🍕', '🍔', '🍰', '🥗', '🥤', '🍜'];
+
+  document.getElementById('cart-review-body').innerHTML = cart.map((item, idx) => `
+    <div class="order-item-row">
+      <div class="order-item-emoji">${foodEmojis[idx % foodEmojis.length]}</div>
+      <div class="order-item-info">
+        <div class="order-item-name">${item.name}</div>
+        <div class="order-item-qty">Qty: ${item.quantity} × ₹${parseFloat(item.price).toFixed(0)}</div>
+      </div>
+      <div class="order-item-price">₹${(item.price * item.quantity).toFixed(0)}</div>
+      <button class="remove-item" onclick="removeItem(${item.menu_item_id})" title="Remove">✕</button>
+    </div>
+  `).join('');
+
+  updateSummary();
+}
+
+function removeItem(id) {
+  cart = cart.filter(i => i.menu_item_id !== id);
+  localStorage.setItem('cart', JSON.stringify(cart));
+  renderCartReview();
+  showToast('Item removed from cart', 'info');
+}
+
+// ---- Update Price Summary ----
+function updateSummary() {
+  const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
+  const tax = subtotal * 0.05;
+  const delivery = selectedOrderType === 'delivery' ? 40 : 0;
+  const total = subtotal + tax + delivery;
+
+  document.getElementById('s-subtotal').textContent = `₹${subtotal.toFixed(0)}`;
+  document.getElementById('s-tax').textContent = `₹${tax.toFixed(0)}`;
+  document.getElementById('s-total').textContent = `₹${total.toFixed(0)}`;
+}
+
+// ---- Place Order ----
+async function placeOrder() {
+  const name = document.getElementById('order-name').value.trim();
+  if (!name) { showToast('Please enter your name', 'error'); return; }
+  if (cart.length === 0) { showToast('Your cart is empty!', 'error'); return; }
+
+  const btn = document.getElementById('place-order-btn');
+  btn.textContent = 'Placing order...';
+  btn.disabled = true;
+
+  const tableNum = document.getElementById('order-table').value;
+  const instructions = document.getElementById('order-instructions').value;
+
+  const res = await apiCall('/api/orders', 'POST', {
+    customer_name: name,
+    table_number: tableNum ? parseInt(tableNum) : null,
+    order_type: selectedOrderType,
+    items: cart,
+    special_instructions: instructions
+  });
+
+  btn.textContent = '🍽️ Place Order';
+  btn.disabled = false;
+
+  if (res.success) {
+    localStorage.removeItem('cart');
+    cart = [];
+    showToast(`Order #${res.order_id} placed successfully! 🎉`);
+    renderCartReview();
+    loadOrders();
+    document.getElementById('order-name').value = '';
+    document.getElementById('order-instructions').value = '';
+  } else {
+    showToast(res.error || 'Order failed. Please try again.', 'error');
+  }
+}
+
+// ---- Load Live Orders ----
+async function loadOrders() {
+  const div = document.getElementById('orders-list');
+  const res = await apiCall('/api/orders');
+
+  if (!res.success) {
+    div.innerHTML = '<p style="color:var(--text-muted);font-size:13px;padding:16px 0;">Could not load orders.</p>';
+    return;
+  }
+
+  if (res.data.length === 0) {
+    div.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><h3>No orders yet</h3></div>`;
+    return;
+  }
+
+  const statusColors = { pending: 'badge-pending', preparing: 'badge-preparing', ready: 'badge-ready', delivered: 'badge-delivered', cancelled: 'badge-cancelled' };
+
+  div.innerHTML = res.data.slice(0, 8).map(o => {
+    const time = new Date(o.created_at);
+    const timeStr = time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    return `
+      <div class="active-order-item">
+        <div class="order-top">
+          <span class="order-name">${o.customer_name}</span>
+          <span class="badge ${statusColors[o.status] || 'badge-pending'}">${o.status}</span>
+        </div>
+        <div class="order-meta">
+          <span>🆔 #${o.id}</span>
+          <span>${o.order_type}</span>
+          ${o.table_number ? `<span>Table ${o.table_number}</span>` : ''}
+          <span>₹${parseFloat(o.total_amount).toFixed(0)}</span>
+          <span>⏰ ${timeStr}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ---- Init ----
+renderCartReview();
+loadOrders();
+</script>
+</body>
+</html>

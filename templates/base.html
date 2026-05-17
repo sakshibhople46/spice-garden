@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}Restaurant{% endblock %}</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<!-- NAVBAR (COMMON FOR ALL PAGES) -->
+<nav class="navbar">
+  <a href="/" class="nav-logo">🍛 Spice Garden</a>
+
+  <ul class="nav-links">
+    <li><a href="/" id="nav-home">Home</a></li>
+    <li><a href="/menu" id="nav-menu">Menu</a></li>
+    <li><a href="/reservations" id="nav-res">Reservations</a></li>
+    <li><a href="/orders" id="nav-orders">Orders</a></li>
+    <li><a href="/dashboard" id="nav-dash">Dashboard</a></li>
+  </ul>
+</nav>
+
+<!-- PAGE CONTENT -->
+<div class="container">
+  {% block content %}{% endblock %}
+</div>
+
+<!-- TOAST -->
+<div id="toast-container"></div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+</body>
+</html>

@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard – Spice Garden</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    .dashboard-wrapper { padding: 40px 0 80px; }
+
+    /* ---- STAT CARDS ---- */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-gold); }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .stat-card.orange::before { background: linear-gradient(90deg, var(--primary), #ff7043); }
+    .stat-card.gold::before { background: linear-gradient(90deg, var(--gold), var(--gold-light)); }
+    .stat-card.green::before { background: linear-gradient(90deg, #2ecc71, #1abc9c); }
+    .stat-card.blue::before { background: linear-gradient(90deg, #3498db, #2980b9); }
+
+    .stat-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .stat-icon {
+      width: 48px; height: 48px;
+      border-radius: var(--radius);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+    }
+    .stat-icon.orange { background: rgba(200,16,46,0.15); }
+    .stat-icon.gold { background: rgba(212,168,67,0.15); }
+    .stat-icon.green { background: rgba(46,204,113,0.15); }
+    .stat-icon.blue { background: rgba(52,152,219,0.15); }
+
+    .stat-change {
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 50px;
+      font-weight: 600;
+    }
+    .stat-change.up { background: rgba(46,204,113,0.15); color: #2ecc71; }
+    .stat-change.neutral { background: rgba(243,156,18,0.15); color: #f39c12; }
+
+    .stat-value {
+      font-family: var(--font-display);
+      font-size: 34px;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .stat-card.orange .stat-value { color: var(--primary-light); }
+    .stat-card.gold .stat-value { color: var(--gold); }
+    .stat-card.green .stat-value { color: #2ecc71; }
+    .stat-card.blue .stat-value { color: #3498db; }
+
+    .stat-label { font-size: 13px; color: var(--text-muted); }
+
+    /* ---- MAIN GRID ---- */
+    .dash-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .dash-grid-3 {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+    }
+
+    /* ---- PANEL ---- */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(135deg, var(--dark-2), var(--surface));
+    }
+    .panel-header h3 { font-family: var(--font-display); font-size: 20px; }
+    .panel-header h3 span { color: var(--gold); }
+    .panel-body { padding: 24px; }
+
+    /* ---- STATUS CHART ---- */
+    .status-bars { display: flex; flex-direction: column; gap: 14px; }
+    .status-bar-row { }
+    .status-bar-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+    .status-bar-label span:first-child { color: var(--text); font-weight: 500; text-transform: capitalize; }
+    .status-bar-label span:last-child { color: var(--text-muted); }
+    .bar-track {
+      height: 8px;
+      background: var(--dark-3);
+      border-radius: 50px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 50px;
+      transition: width 1s ease;
+    }
+    .bar-pending { background: linear-gradient(90deg, #f39c12, #e67e22); }
+    .bar-preparing { background: linear-gradient(90deg, #3498db, #2980b9); }
+    .bar-ready { background: linear-gradient(90deg, #2ecc71, #1abc9c); }
+    .bar-delivered { background: linear-gradient(90deg, #9b59b6, #8e44ad); }
+    .bar-cancelled { background: linear-gradient(90deg, #e74c3c, #c0392b); }
+
+    /* ---- ORDERS TABLE ---- */
+    .orders-table { width: 100%; border-collapse: collapse; }
+    .orders-table thead th {
+      text-align: left;
+      padding: 10px 16px;
+      font-size: 11px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      background: var(--dark-2);
+    }
+    .orders-table tbody tr {
+      transition: background 0.15s;
+      border-bottom: 1px solid var(--border);
+    }
+    .orders-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+    .orders-table tbody tr:last-child { border-bottom: none; }
+    .orders-table td {
+      padding: 14px 16px;
+      font-size: 13px;
+      color: var(--text);
+      vertical-align: middle;
+    }
+    .orders-table td .order-id { color: var(--text-muted); }
+    .orders-table td .order-customer { font-weight: 600; }
+    .orders-table td .order-amount { color: var(--gold); font-weight: 700; }
+
+    .status-select {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 5px 10px;
+      font-size: 12px;
+      color: var(--text);
+      cursor: pointer;
+      font-family: var(--font-body);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .status-select:focus { border-color: var(--gold); }
+
+    /* ---- TOP ITEMS ---- */
+    .top-items { display: flex; flex-direction: column; gap: 12px; }
+    .top-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px;
+      background: var(--dark-2);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+    .top-item-rank {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .rank-1 { background: var(--gold); color: var(--dark); }
+    .rank-2 { background: #c0c0c0; color: var(--dark); }
+    .rank-3 { background: #cd7f32; color: white; }
+    .rank-other { background: var(--surface); color: var(--text-muted); border: 1px solid var(--border); }
+
+    .top-item-name { flex: 1; font-size: 13px; font-weight: 600; }
+    .top-item-count {
+      font-size: 12px;
+      color: var(--text-muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 3px 10px;
+      border-radius: 50px;
+    }
+
+    /* ---- QUICK ACTIONS ---- */
+    .quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .action-btn {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: block;
+    }
+    .action-btn:hover { border-color: var(--gold); background: rgba(212,168,67,0.05); }
+    .action-btn .action-icon { font-size: 24px; margin-bottom: 8px; }
+    .action-btn .action-label { font-size: 12px; font-weight: 600; color: var(--text); }
+
+    /* ---- RESERVATIONS PANEL ---- */
+    .res-mini {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .res-mini:last-child { border-bottom: none; }
+    .res-mini-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-confirmed { background: #2ecc71; }
+    .dot-pending { background: #f39c12; }
+    .dot-cancelled { background: #e74c3c; }
+    .res-mini-info { flex: 1; }
+    .res-mini-name { font-size: 13px; font-weight: 600; }
+    .res-mini-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    @media (max-width: 900px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .dash-grid, .dash-grid-3 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="/" class="nav-logo">
+    <span class="logo-icon">🍛</span>
+    <div>
+      <span class="logo-text">Spice Garden</span>
+      <span class="logo-sub">Fine Dining</span>
+    </div>
+  </a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li><a href="/menu">Menu</a></li>
+    <li><a href="/reservations">Reservations</a></li>
+    <li><a href="/orders">Order Now</a></li>
+    <li><a href="/dashboard" class="active">Dashboard</a></li>
+  </ul>
+  <button class="nav-toggle"><span></span><span></span><span></span></button>
+</nav>
+
+<div class="page-wrapper">
+  <div class="page-hero">
+    <div class="container">
+      <h1>Admin <span>Dashboard</span></h1>
+      <p>Live restaurant stats, order management, and insights</p>
+    </div>
+  </div>
+
+  <div class="container dashboard-wrapper">
+
+    <!-- Loading -->
+    <div id="dash-loading" style="text-align:center;padding:80px;"><div class="spinner"></div></div>
+
+    <!-- Dashboard Content (hidden until loaded) -->
+    <div id="dash-content" style="display:none;">
+
+      <!-- STAT CARDS -->
+      <div class="stats-row">
+        <div class="stat-card orange">
+          <div class="stat-card-top">
+            <div class="stat-icon orange">📦</div>
+            <span class="stat-change neutral">Today</span>
+          </div>
+          <div class="stat-value" id="d-orders">–</div>
+          <div class="stat-label">Orders Today</div>
+        </div>
+        <div class="stat-card gold">
+          <div class="stat-card-top">
+            <div class="stat-icon gold">💰</div>
+            <span class="stat-change up">↑ Live</span>
+          </div>
+          <div class="stat-value" id="d-revenue">–</div>
+          <div class="stat-label">Today's Revenue</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-card-top">
+            <div class="stat-icon green">🔥</div>
+            <span class="stat-change neutral">Active</span>
+          </div>
+          <div class="stat-value" id="d-active">–</div>
+          <div class="stat-label">Active Orders</div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-card-top">
+            <div class="stat-icon blue">📅</div>
+            <span class="stat-change neutral">Pending</span>
+          </div>
+          <div class="stat-value" id="d-reservations">–</div>
+          <div class="stat-label">Pending Reservations</div>
+        </div>
+      </div>
+
+      <!-- ROW 1 -->
+      <div class="dash-grid">
+
+        <!-- Order Status Breakdown -->
+        <div class="panel">
+          <div class="panel-header">
+            <h3>Order <span>Status Breakdown</span></h3>
+          </div>
+          <div class="panel-body">
+            <div class="status-bars" id="status-bars"></div>
+          </div>
+        </div>
+
+        <!-- Top Menu Items -->
+        <div class="panel">
+          <div class="panel-header">
+            <h3>🏆 Top <span>Dishes</span></h3>
+          </div>
+          <div class="panel-body">
+            <div class="top-items" id="top-items"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ROW 2: RECENT ORDERS TABLE + QUICK ACTIONS -->
+      <div class="dash-grid-3">
+
+        <!-- Recent Orders Table -->
+        <div class="panel">
+          <div class="panel-header">
+            <h3>Recent <span>Orders</span></h3>
+            <button class="btn btn-ghost btn-sm" onclick="loadDashboard()">↻ Refresh</button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="orders-table">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Update</th>
+                </tr>
+              </thead>
+              <tbody id="orders-table-body">
+                <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted);">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div style="display:flex;flex-direction:column;gap:20px;">
+
+          <!-- Quick Actions -->
+          <div class="panel">
+            <div class="panel-header">
+              <h3>⚡ Quick <span>Actions</span></h3>
+            </div>
+            <div class="panel-body">
+              <div class="quick-actions">
+                <a href="/menu" class="action-btn">
+                  <div class="action-icon">🍽️</div>
+                  <div class="action-label">View Menu</div>
+                </a>
+                <a href="/reservations" class="action-btn">
+                  <div class="action-icon">📅</div>
+                  <div class="action-label">Reservations</div>
+                </a>
+                <a href="/orders" class="action-btn">
+                  <div class="action-icon">📦</div>
+                  <div class="action-label">All Orders</div>
+                </a>
+                <a href="/" class="action-btn">
+                  <div class="action-icon">🏠</div>
+                  <div class="action-label">Home Page</div>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Upcoming Reservations -->
+          <div class="panel">
+            <div class="panel-header">
+              <h3>📅 <span>Reservations</span></h3>
+            </div>
+            <div class="panel-body" id="res-mini-list">
+              <div class="spinner"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div><!-- end dash-content -->
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="logo-text">🍛 Spice Garden</div>
+      <p>A celebration of authentic Indian flavors.<br>Open daily from 12 PM to 11 PM.</p>
+    </div>
+    <div class="footer-links">
+      <h4>Quick Links</h4>
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/menu">Menu</a></li>
+        <li><a href="/reservations">Reservations</a></li>
+        <li><a href="/orders">Orders</a></li>
+      </ul>
+    </div>
+    <div class="footer-links">
+      <h4>Contact</h4>
+      <ul>
+        <li><a href="#">📍 Bandra West, Mumbai</a></li>
+        <li><a href="#">📞 +91 98765 43210</a></li>
+        <li><a href="#">✉️ hello@spicegarden.in</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">© 2024 Spice Garden. All rights reserved.</div>
+</footer>
+
+<div id="toast-container"></div>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+async function loadDashboard() {
+  const res = await apiCall('/api/dashboard/stats');
+
+  document.getElementById('dash-loading').style.display = 'none';
+  document.getElementById('dash-content').style.display = 'block';
+
+  if (!res.success) {
+    showToast('Failed to load dashboard data. Check server connection.', 'error');
+    // Show placeholder zeros
+    document.getElementById('d-orders').textContent = '0';
+    document.getElementById('d-revenue').textContent = '₹0';
+    document.getElementById('d-active').textContent = '0';
+    document.getElementById('d-reservations').textContent = '0';
+    return;
+  }
+
+  const data = res.data;
+
+  // ---- Stat Cards ----
+  document.getElementById('d-orders').textContent = data.today_orders;
+  document.getElementById('d-revenue').textContent = '₹' + parseFloat(data.today_revenue).toFixed(0);
+  document.getElementById('d-active').textContent = data.active_orders;
+  document.getElementById('d-reservations').textContent = data.pending_reservations;
+
+  // ---- Status Bars ----
+  const statusConfig = {
+    pending: { label: 'Pending', color: 'bar-pending' },
+    preparing: { label: 'Preparing', color: 'bar-preparing' },
+    ready: { label: 'Ready', color: 'bar-ready' },
+    delivered: { label: 'Delivered', color: 'bar-delivered' },
+    cancelled: { label: 'Cancelled', color: 'bar-cancelled' }
+  };
+
+  const totalOrders = data.orders_by_status.reduce((s, o) => s + o.count, 0) || 1;
+  const barsDiv = document.getElementById('status-bars');
+
+  if (data.orders_by_status.length === 0) {
+    barsDiv.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">No orders yet today.</p>';
+  } else {
+    barsDiv.innerHTML = data.orders_by_status.map(s => {
+      const cfg = statusConfig[s.status] || { label: s.status, color: 'bar-pending' };
+      const pct = Math.round((s.count / totalOrders) * 100);
+      return `
+        <div class="status-bar-row">
+          <div class="status-bar-label">
+            <span>${cfg.label}</span>
+            <span>${s.count} orders (${pct}%)</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill ${cfg.color}" style="width:${pct}%"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ---- Top Items ----
+  const topDiv = document.getElementById('top-items');
+  if (!data.top_items || data.top_items.length === 0) {
+    topDiv.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">No order data yet.</p>';
+  } else {
+    topDiv.innerHTML = data.top_items.map((item, idx) => {
+      const rankClass = idx === 0 ? 'rank-1' : idx === 1 ? 'rank-2' : idx === 2 ? 'rank-3' : 'rank-other';
+      return `
+        <div class="top-item">
+          <div class="top-item-rank ${rankClass}">${idx + 1}</div>
+          <div class="top-item-name">${item.name}</div>
+          <div class="top-item-count">${item.total_ordered} orders</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ---- Recent Orders Table ----
+  const tbody = document.getElementById('orders-table-body');
+  if (!data.recent_orders || data.recent_orders.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted);">No orders yet</td></tr>';
+  } else {
+    const statusBadge = { pending: 'badge-pending', preparing: 'badge-preparing', ready: 'badge-ready', delivered: 'badge-delivered', cancelled: 'badge-cancelled' };
+    tbody.innerHTML = data.recent_orders.map(o => `
+      <tr>
+        <td><span class="order-id">#${o.id}</span></td>
+        <td><span class="order-customer">${o.customer_name}</span></td>
+        <td>${o.order_type}</td>
+        <td><span class="order-amount">₹${parseFloat(o.total_amount).toFixed(0)}</span></td>
+        <td><span class="badge ${statusBadge[o.status] || 'badge-pending'}">${o.status}</span></td>
+        <td>
+          <select class="status-select" onchange="updateOrderStatus(${o.id}, this.value)">
+            <option value="pending" ${o.status==='pending'?'selected':''}>Pending</option>
+            <option value="preparing" ${o.status==='preparing'?'selected':''}>Preparing</option>
+            <option value="ready" ${o.status==='ready'?'selected':''}>Ready</option>
+            <option value="delivered" ${o.status==='delivered'?'selected':''}>Delivered</option>
+            <option value="cancelled" ${o.status==='cancelled'?'selected':''}>Cancelled</option>
+          </select>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // ---- Mini Reservations ----
+  loadMiniReservations();
+}
+
+async function loadMiniReservations() {
+  const div = document.getElementById('res-mini-list');
+  const res = await apiCall('/api/reservations');
+
+  if (!res.success || res.data.length === 0) {
+    div.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">No upcoming reservations.</p>';
+    return;
+  }
+
+  div.innerHTML = res.data.slice(0, 5).map(r => {
+    const dotClass = r.status === 'confirmed' ? 'dot-confirmed' : r.status === 'cancelled' ? 'dot-cancelled' : 'dot-pending';
+    return `
+      <div class="res-mini">
+        <div class="res-mini-dot ${dotClass}"></div>
+        <div class="res-mini-info">
+          <div class="res-mini-name">${r.customer_name}</div>
+          <div class="res-mini-meta">${formatDate(r.date)} · ${formatTime(r.time)} · ${r.guests} guests</div>
+        </div>
+        <span class="badge badge-${r.status === 'confirmed' ? 'confirmed' : r.status === 'cancelled' ? 'cancelled' : 'pending'}" style="font-size:10px;">${r.status}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+// ---- Update Order Status from Dashboard ----
+async function updateOrderStatus(orderId, status) {
+  const res = await apiCall(`/api/orders/${orderId}`, 'PUT', { status });
+  if (res.success) {
+    showToast(`Order #${orderId} updated to "${status}"`);
+    loadDashboard();
+  } else {
+    showToast('Failed to update order', 'error');
+  }
+}
+
+// ---- Load on page start ----
+loadDashboard();
+
+// ---- Auto-refresh every 30 seconds ----
+setInterval(loadDashboard, 30000);
+</script>
+</body>
+</html>

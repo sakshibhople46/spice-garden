@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reservations – Spice Garden</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    .res-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      padding: 48px 0 80px;
+      align-items: start;
+    }
+
+    /* ---- FORM CARD ---- */
+    .form-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .form-card-header {
+      padding: 28px 32px 24px;
+      background: linear-gradient(135deg, var(--dark-2) 0%, var(--surface) 100%);
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+    .form-card-header::before {
+      content: '📅';
+      position: absolute;
+      font-size: 80px;
+      right: 20px;
+      top: 10px;
+      opacity: 0.08;
+    }
+    .form-card-header h2 {
+      font-family: var(--font-display);
+      font-size: 26px;
+      margin-bottom: 6px;
+    }
+    .form-card-header h2 span { color: var(--gold); }
+    .form-card-header p { color: var(--text-muted); font-size: 14px; }
+
+    .form-card-body { padding: 28px 32px 32px; }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    /* ---- TIME SLOTS ---- */
+    .time-slots {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    .time-slot {
+      padding: 10px 4px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--surface-2);
+      color: var(--text-muted);
+      transition: all 0.2s;
+    }
+    .time-slot:hover { border-color: var(--gold); color: var(--text); }
+    .time-slot.selected {
+      background: var(--gold);
+      color: var(--dark);
+      border-color: var(--gold);
+    }
+    .time-slot.unavailable { opacity: 0.3; cursor: not-allowed; }
+
+    /* ---- GUESTS SELECTOR ---- */
+    .guests-selector {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .guests-btn {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .guests-btn:hover { background: var(--gold); color: var(--dark); border-color: var(--gold); }
+    .guests-display {
+      font-family: var(--font-display);
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--gold);
+      min-width: 50px;
+      text-align: center;
+    }
+    .guests-label { font-size: 12px; color: var(--text-muted); }
+
+    /* ---- SUCCESS CARD ---- */
+    .success-card {
+      background: linear-gradient(135deg, #0d2b1c, #1a3a28);
+      border: 1px solid #2ecc71;
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      text-align: center;
+      display: none;
+    }
+    .success-card .success-icon { font-size: 56px; margin-bottom: 16px; }
+    .success-card h3 { font-family: var(--font-display); font-size: 24px; color: #2ecc71; margin-bottom: 8px; }
+    .success-card p { color: var(--text-muted); font-size: 14px; margin-bottom: 20px; }
+    .success-details {
+      background: rgba(46,204,113,0.1);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: left;
+      margin-bottom: 20px;
+    }
+    .success-details div { font-size: 13px; padding: 4px 0; color: var(--text); }
+    .success-details span { color: #2ecc71; font-weight: 600; }
+
+    /* ---- RIGHT COLUMN ---- */
+    .info-section { display: flex; flex-direction: column; gap: 24px; }
+
+    /* ---- TIMING CARD ---- */
+    .timing-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+    }
+    .timing-card h3 { font-family: var(--font-display); font-size: 20px; margin-bottom: 20px; }
+    .timing-card h3 span { color: var(--gold); }
+
+    .timing-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .timing-row:last-child { border-bottom: none; }
+    .timing-day { color: var(--text-muted); }
+    .timing-time { color: var(--text); font-weight: 600; }
+    .timing-open { color: #2ecc71; font-size: 12px; }
+
+    /* ---- EXISTING RESERVATIONS ---- */
+    .reservations-list { margin-top: 0; }
+    .res-table-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .res-table-header h3 { font-family: var(--font-display); font-size: 20px; }
+    .res-table-header h3 span { color: var(--gold); }
+
+    .reservation-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 12px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .reservation-card:hover { border-color: rgba(212,168,67,0.4); }
+
+    .res-date-box {
+      background: var(--dark-3);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      text-align: center;
+      min-width: 60px;
+      flex-shrink: 0;
+    }
+    .res-date-day { font-size: 22px; font-weight: 700; color: var(--gold); font-family: var(--font-display); line-height: 1; }
+    .res-date-month { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+    .res-info { flex: 1; }
+    .res-name { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+    .res-meta { font-size: 12px; color: var(--text-muted); display: flex; gap: 12px; flex-wrap: wrap; }
+
+    @media (max-width: 900px) {
+      .res-layout { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+      .time-slots { grid-template-columns: repeat(3, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="/" class="nav-logo">
+    <span class="logo-icon">🍛</span>
+    <div>
+      <span class="logo-text">Spice Garden</span>
+      <span class="logo-sub">Fine Dining</span>
+    </div>
+  </a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li><a href="/menu">Menu</a></li>
+    <li><a href="/reservations" class="active">Reservations</a></li>
+    <li><a href="/orders">Order Now</a></li>
+    <li><a href="/dashboard">Dashboard</a></li>
+  </ul>
+  <button class="nav-toggle"><span></span><span></span><span></span></button>
+</nav>
+
+<div class="page-wrapper">
+  <div class="page-hero">
+    <div class="container">
+      <h1>Book a <span>Table</span></h1>
+      <p>Reserve your spot for an unforgettable dining experience</p>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="res-layout">
+
+      <!-- LEFT: BOOKING FORM -->
+      <div>
+        <!-- Form Card -->
+        <div class="form-card" id="booking-form-card">
+          <div class="form-card-header">
+            <h2>Make a <span>Reservation</span></h2>
+            <p>Fill in your details and we'll confirm your table</p>
+          </div>
+          <div class="form-card-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Your Name *</label>
+                <input type="text" id="res-name" class="form-control" placeholder="e.g. Priya Sharma" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Phone Number *</label>
+                <input type="tel" id="res-phone" class="form-control" placeholder="+91 98765 43210" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Email Address *</label>
+              <input type="email" id="res-email" class="form-control" placeholder="your@email.com" required>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Date *</label>
+                <input type="date" id="res-date" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Number of Guests *</label>
+                <div class="guests-selector">
+                  <button class="guests-btn" onclick="changeGuests(-1)">−</button>
+                  <div>
+                    <div class="guests-display" id="guests-display">2</div>
+                    <div class="guests-label">guests</div>
+                  </div>
+                  <button class="guests-btn" onclick="changeGuests(1)">+</button>
+                </div>
+                <input type="hidden" id="res-guests" value="2">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Select Time Slot *</label>
+              <div class="time-slots" id="time-slots">
+                <div class="time-slot" data-time="12:00">12:00 PM</div>
+                <div class="time-slot" data-time="13:00">1:00 PM</div>
+                <div class="time-slot" data-time="14:00">2:00 PM</div>
+                <div class="time-slot" data-time="15:00">3:00 PM</div>
+                <div class="time-slot" data-time="18:00">6:00 PM</div>
+                <div class="time-slot" data-time="19:00">7:00 PM</div>
+                <div class="time-slot" data-time="20:00">8:00 PM</div>
+                <div class="time-slot" data-time="21:00">9:00 PM</div>
+              </div>
+              <input type="hidden" id="res-time">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Special Requests</label>
+              <textarea id="res-special" class="form-control" placeholder="Allergies, birthday celebration, seating preferences..."></textarea>
+            </div>
+
+            <button class="btn btn-gold btn-block btn-lg" onclick="submitReservation()" id="submit-btn">
+              📅 Confirm Reservation
+            </button>
+          </div>
+        </div>
+
+        <!-- Success Card (shown after booking) -->
+        <div class="success-card" id="success-card">
+          <div class="success-icon">🎉</div>
+          <h3>Reservation Confirmed!</h3>
+          <p>We've received your booking. See you soon!</p>
+          <div class="success-details" id="success-details"></div>
+          <button class="btn btn-outline" onclick="resetForm()">Make Another Reservation</button>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div class="info-section">
+
+        <!-- Opening Hours -->
+        <div class="timing-card">
+          <h3>Opening <span>Hours</span></h3>
+          <div class="timing-row">
+            <span class="timing-day">Monday – Friday</span>
+            <span class="timing-time">12 PM – 11 PM <span class="timing-open">● Open</span></span>
+          </div>
+          <div class="timing-row">
+            <span class="timing-day">Saturday</span>
+            <span class="timing-time">11 AM – 11:30 PM <span class="timing-open">● Open</span></span>
+          </div>
+          <div class="timing-row">
+            <span class="timing-day">Sunday</span>
+            <span class="timing-time">11 AM – 10 PM <span class="timing-open">● Open</span></span>
+          </div>
+          <div class="timing-row">
+            <span class="timing-day">Public Holidays</span>
+            <span class="timing-time">12 PM – 10 PM</span>
+          </div>
+
+          <div style="margin-top:20px; padding:16px; background:var(--dark-3); border-radius:var(--radius); border:1px solid var(--border);">
+            <div style="font-size:13px; color:var(--text-muted); line-height:1.8;">
+              📍 Bandra West, Mumbai 400050<br>
+              📞 +91 98765 43210<br>
+              ✉️ reservations@spicegarden.in
+            </div>
+          </div>
+        </div>
+
+        <!-- Existing Reservations -->
+        <div class="reservations-list">
+          <div class="res-table-header">
+            <h3>Recent <span>Bookings</span></h3>
+            <button class="btn btn-ghost btn-sm" onclick="loadReservations()">↻ Refresh</button>
+          </div>
+          <div id="reservations-list">
+            <div class="spinner"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="logo-text">🍛 Spice Garden</div>
+      <p>A celebration of authentic Indian flavors.<br>Open daily from 12 PM to 11 PM.</p>
+    </div>
+    <div class="footer-links">
+      <h4>Quick Links</h4>
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/menu">Menu</a></li>
+        <li><a href="/reservations">Reservations</a></li>
+        <li><a href="/orders">Orders</a></li>
+      </ul>
+    </div>
+    <div class="footer-links">
+      <h4>Contact</h4>
+      <ul>
+        <li><a href="#">📍 Bandra West, Mumbai</a></li>
+        <li><a href="#">📞 +91 98765 43210</a></li>
+        <li><a href="#">✉️ hello@spicegarden.in</a></li>
+        <li><a href="#">🕐 12 PM – 11 PM Daily</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">© 2024 Spice Garden. All rights reserved.</div>
+</footer>
+
+<div id="toast-container"></div>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+// ---- Set min date to today ----
+document.getElementById('res-date').min = new Date().toISOString().split('T')[0];
+
+// ---- Guests counter ----
+let guestCount = 2;
+function changeGuests(delta) {
+  guestCount = Math.max(1, Math.min(20, guestCount + delta));
+  document.getElementById('guests-display').textContent = guestCount;
+  document.getElementById('res-guests').value = guestCount;
+}
+
+// ---- Time slot selection ----
+let selectedTime = '';
+document.querySelectorAll('.time-slot').forEach(slot => {
+  slot.addEventListener('click', function() {
+    document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+    this.classList.add('selected');
+    selectedTime = this.dataset.time;
+    document.getElementById('res-time').value = selectedTime;
+  });
+});
+
+// ---- Submit Reservation ----
+async function submitReservation() {
+  const name = document.getElementById('res-name').value.trim();
+  const email = document.getElementById('res-email').value.trim();
+  const phone = document.getElementById('res-phone').value.trim();
+  const date = document.getElementById('res-date').value;
+  const guests = document.getElementById('res-guests').value;
+  const special = document.getElementById('res-special').value;
+
+  if (!name || !email || !phone || !date || !selectedTime) {
+    showToast('Please fill in all required fields and select a time slot', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('submit-btn');
+  btn.textContent = 'Confirming...';
+  btn.disabled = true;
+
+  const res = await apiCall('/api/reservations', 'POST', {
+    customer_name: name,
+    email, phone, date,
+    time: selectedTime + ':00',
+    guests: parseInt(guests),
+    special_requests: special
+  });
+
+  btn.textContent = '📅 Confirm Reservation';
+  btn.disabled = false;
+
+  if (res.success) {
+    // Show success card
+    document.getElementById('booking-form-card').style.display = 'none';
+    const successCard = document.getElementById('success-card');
+    successCard.style.display = 'block';
+
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const d = new Date(date);
+    document.getElementById('success-details').innerHTML = `
+      <div>👤 Name: <span>${name}</span></div>
+      <div>📅 Date: <span>${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}</span></div>
+      <div>🕐 Time: <span>${formatTime(selectedTime + ':00')}</span></div>
+      <div>👥 Guests: <span>${guests} ${parseInt(guests) === 1 ? 'person' : 'people'}</span></div>
+      <div>📋 Booking ID: <span>#${res.id || 'SG' + Date.now().toString().slice(-4)}</span></div>
+    `;
+    showToast('Reservation confirmed! 🎉');
+    loadReservations();
+  } else {
+    showToast(res.error || 'Failed to book. Please try again.', 'error');
+  }
+}
+
+function resetForm() {
+  document.getElementById('booking-form-card').style.display = 'block';
+  document.getElementById('success-card').style.display = 'none';
+  document.getElementById('res-name').value = '';
+  document.getElementById('res-email').value = '';
+  document.getElementById('res-phone').value = '';
+  document.getElementById('res-date').value = '';
+  document.getElementById('res-special').value = '';
+  document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+  selectedTime = '';
+  guestCount = 2;
+  document.getElementById('guests-display').textContent = 2;
+  document.getElementById('res-guests').value = 2;
+}
+
+// ---- Load Existing Reservations ----
+async function loadReservations() {
+  const div = document.getElementById('reservations-list');
+  div.innerHTML = '<div class="spinner"></div>';
+
+  const res = await apiCall('/api/reservations');
+  if (!res.success) {
+    div.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Could not load reservations.</p>';
+    return;
+  }
+
+  if (res.data.length === 0) {
+    div.innerHTML = `<div class="empty-state"><div class="empty-icon">📅</div><h3>No reservations yet</h3></div>`;
+    return;
+  }
+
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  div.innerHTML = res.data.slice(0, 6).map(r => {
+    const d = new Date(r.date);
+    const statusClass = r.status === 'confirmed' ? 'badge-confirmed' : r.status === 'cancelled' ? 'badge-cancelled' : 'badge-pending';
+    return `
+      <div class="reservation-card">
+        <div class="res-date-box">
+          <div class="res-date-day">${d.getDate()}</div>
+          <div class="res-date-month">${months[d.getMonth()]}</div>
+        </div>
+        <div class="res-info">
+          <div class="res-name">${r.customer_name}</div>
+          <div class="res-meta">
+            <span>🕐 ${formatTime(r.time)}</span>
+            <span>👥 ${r.guests} guests</span>
+            <span>📞 ${r.phone}</span>
+          </div>
+        </div>
+        <span class="badge ${statusClass}">${r.status}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+loadReservations();
+</script>
+</body>
+</html>

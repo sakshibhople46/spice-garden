@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spice Garden – Fine Indian Dining</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    /* ---- HERO SECTION ---- */
+    .hero {
+      min-height: 100vh;
+      background: 
+        linear-gradient(to bottom, rgba(26,16,8,0.7) 0%, rgba(26,16,8,0.9) 100%),
+        url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1600&q=80') center/cover no-repeat;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 0 24px;
+      position: relative;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 18px;
+      border: 1px solid var(--gold);
+      border-radius: 50px;
+      font-size: 12px;
+      color: var(--gold);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+      animation: fadeUp 0.8s ease 0.2s both;
+    }
+
+    .hero h1 {
+      font-family: var(--font-display);
+      font-size: clamp(42px, 7vw, 80px);
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 20px;
+      animation: fadeUp 0.8s ease 0.4s both;
+    }
+
+    .hero h1 .line2 { color: var(--gold); display: block; }
+
+    .hero p {
+      font-size: clamp(14px, 2vw, 18px);
+      color: var(--text-muted);
+      max-width: 480px;
+      margin: 0 auto 36px;
+      line-height: 1.8;
+      animation: fadeUp 0.8s ease 0.6s both;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      animation: fadeUp 0.8s ease 0.8s both;
+    }
+
+    .scroll-hint {
+      position: absolute;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--text-muted);
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      animation: bounce 2s infinite;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(-8px); }
+    }
+
+    /* ---- STATS BAR ---- */
+    .stats-bar {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 28px 0;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      text-align: center;
+    }
+
+    .stat-item { padding: 12px; }
+    .stat-number {
+      font-family: var(--font-display);
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--gold);
+      line-height: 1;
+    }
+    .stat-label { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+    /* ---- FEATURES ---- */
+    .features { padding: 80px 0; }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px 28px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--primary), var(--gold));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .feature-card:hover::before { opacity: 1; }
+    .feature-card:hover { transform: translateY(-6px); border-color: rgba(212,168,67,0.3); }
+
+    .feature-icon { font-size: 36px; margin-bottom: 16px; }
+    .feature-card h3 { font-family: var(--font-display); font-size: 20px; margin-bottom: 10px; }
+    .feature-card p { color: var(--text-muted); font-size: 14px; line-height: 1.7; }
+    .feature-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--gold);
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      margin-top: 16px;
+      transition: gap 0.2s;
+    }
+    .feature-link:hover { gap: 10px; }
+
+    /* ---- SPECIALTIES ---- */
+    .specialties { padding: 60px 0 80px; }
+    .specials-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-top: 40px;
+    }
+
+    .special-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+    .special-card:hover { transform: translateY(-4px); border-color: rgba(212,168,67,0.3); }
+
+    .special-img {
+      height: 180px;
+      background: var(--dark-3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 60px;
+    }
+
+    .special-body { padding: 20px; }
+    .special-body h3 { font-family: var(--font-display); font-size: 18px; margin-bottom: 6px; }
+    .special-body p { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
+    .special-price { font-size: 20px; font-weight: 700; color: var(--gold); }
+
+    /* ---- CTA BANNER ---- */
+    .cta-banner {
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+      border-radius: var(--radius-lg);
+      padding: 60px 48px;
+      text-align: center;
+      margin: 0 24px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-banner::before {
+      content: '🍽️';
+      position: absolute;
+      font-size: 200px;
+      opacity: 0.05;
+      right: -20px;
+      top: -40px;
+    }
+    .cta-banner h2 { font-family: var(--font-display); font-size: clamp(24px, 4vw, 38px); margin-bottom: 12px; }
+    .cta-banner p { color: rgba(255,255,255,0.7); margin-bottom: 28px; font-size: 15px; }
+
+    @media (max-width: 768px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .features-grid, .specials-grid { grid-template-columns: 1fr; }
+      .cta-banner { padding: 40px 24px; margin: 0 0 60px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="/" class="nav-logo">
+    <span class="logo-icon">🍛</span>
+    <div>
+      <span class="logo-text">Spice Garden</span>
+      <span class="logo-sub">Fine Dining</span>
+    </div>
+  </a>
+  <ul class="nav-links">
+    <li><a href="/" class="active">Home</a></li>
+    <li><a href="/menu">Menu</a></li>
+    <li><a href="/reservations">Reservations</a></li>
+    <li><a href="/orders">Order Now</a></li>
+    <li><a href="/dashboard">Dashboard</a></li>
+  </ul>
+  <button class="nav-toggle" aria-label="Toggle menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div>
+    <div class="hero-badge">⭐ Est. 2010 · Mumbai, India</div>
+    <h1>
+      Taste the Magic of
+      <span class="line2">Authentic India</span>
+    </h1>
+    <p>A culinary journey through the finest spices and traditions of Indian cuisine, crafted with love.</p>
+    <div class="hero-actions">
+      <a href="/menu" class="btn btn-gold btn-lg">🍽️ View Our Menu</a>
+      <a href="/reservations" class="btn btn-outline btn-lg">📅 Book a Table</a>
+    </div>
+  </div>
+  <div class="scroll-hint">↓ scroll to explore</div>
+</section>
+
+<!-- STATS -->
+<section class="stats-bar">
+  <div class="container">
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-number">50+</div>
+        <div class="stat-label">Menu Items</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">12</div>
+        <div class="stat-label">Years of Excellence</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">500+</div>
+        <div class="stat-label">Happy Guests Daily</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">4.8★</div>
+        <div class="stat-label">Average Rating</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features">
+  <div class="container">
+    <div style="text-align:center; margin-bottom:48px;">
+      <h2 class="section-title">Everything You Need, <span>All in One Place</span></h2>
+      <p class="section-subtitle">Manage your dining experience effortlessly</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🍕</div>
+        <h3>Explore Our Menu</h3>
+        <p>Browse our carefully crafted menu with categories from starters to desserts. Filter by veg/non-veg.</p>
+        <a href="/menu" class="feature-link">View Menu →</a>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📅</div>
+        <h3>Table Reservations</h3>
+        <p>Reserve your table in advance for a seamless dining experience. Instant confirmation sent to your email.</p>
+        <a href="/reservations" class="feature-link">Book Now →</a>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🛵</div>
+        <h3>Place an Order</h3>
+        <p>Order dine-in, takeaway, or delivery. Track your order status in real time from our kitchen.</p>
+        <a href="/orders" class="feature-link">Order Now →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SPECIALTIES -->
+<section class="specialties">
+  <div class="container">
+    <h2 class="section-title">Chef's <span>Specials</span></h2>
+    <p class="section-subtitle">Most loved dishes from our kitchen</p>
+    <div class="specials-grid">
+      <div class="special-card">
+        <div class="special-img">🍛</div>
+        <div class="special-body">
+          <h3>Chicken Biryani</h3>
+          <p>Fragrant basmati rice slow-cooked with tender chicken and exotic spices.</p>
+          <div class="special-price">₹420</div>
+        </div>
+      </div>
+      <div class="special-card">
+        <div class="special-img">🧀</div>
+        <div class="special-body">
+          <h3>Paneer Butter Masala</h3>
+          <p>Soft cottage cheese in a rich, creamy tomato-based gravy. A vegetarian classic.</p>
+          <div class="special-price">₹350</div>
+        </div>
+      </div>
+      <div class="special-card">
+        <div class="special-img">🍕</div>
+        <div class="special-body">
+          <h3>BBQ Chicken Pizza</h3>
+          <p>Smoky BBQ base with juicy chicken, caramelized onions, and melted cheese.</p>
+          <div class="special-price">₹500</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA BANNER -->
+<div class="container">
+  <div class="cta-banner">
+    <h2>Ready for a Memorable Evening?</h2>
+    <p>Reserve your table today and enjoy our exclusive Chef's Tasting Menu</p>
+    <a href="/reservations" class="btn btn-gold btn-lg">Reserve a Table</a>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="logo-text">🍛 Spice Garden</div>
+      <p>A celebration of authentic Indian flavors.<br>Open daily from 12 PM to 11 PM.</p>
+    </div>
+    <div class="footer-links">
+      <h4>Quick Links</h4>
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/menu">Menu</a></li>
+        <li><a href="/reservations">Reservations</a></li>
+        <li><a href="/orders">Orders</a></li>
+      </ul>
+    </div>
+    <div class="footer-links">
+      <h4>Contact</h4>
+      <ul>
+        <li><a href="#">📍 Bandra West, Mumbai</a></li>
+        <li><a href="#">📞 +91 98765 43210</a></li>
+        <li><a href="#">✉️ hello@spicegarden.in</a></li>
+        <li><a href="#">🕐 12 PM – 11 PM Daily</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    © 2024 Spice Garden. All rights reserved. | Built with Flask & MySQL
+  </div>
+</footer>
+
+<div id="toast-container"></div>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
